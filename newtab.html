@@ -1278,8 +1278,8 @@
             const canvasX = (mouseX - canvasState.x) / canvasState.zoom;
             const canvasY = (mouseY - canvasState.y) / canvasState.zoom;
 
-            // Apply zoom
-            const zoomFactor = delta > 0 ? 0.9 : 1.1;
+            // Apply zoom (smaller factor = slower zoom)
+            const zoomFactor = delta > 0 ? 0.95 : 1.05;
             const newZoom = Math.max(canvasState.minZoom, Math.min(canvasState.maxZoom, canvasState.zoom * zoomFactor));
 
             // Adjust pan to keep the point under the mouse
