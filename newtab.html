@@ -1,0 +1,1587 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>New Tab - Chakra</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #1A1A1A;
+            --bg-secondary: #222222;
+            --bg-card: #1E1E1E;
+            --gold-primary: #C9A067;
+            --gold-light: #D4A855;
+            --text-primary: #F5F5F5;
+            --text-secondary: #B0B0B0;
+            --text-muted: #707070;
+            --border-subtle: #333333;
+            --border-gold: #5A4A35;
+
+            /* Priority colors */
+            --priority-high: #E74C3C;
+            --priority-medium: #F39C12;
+            --priority-low: #27AE60;
+
+            /* Status badge colors */
+            --status-urgent: #E74C3C;
+            --status-progress: #3498DB;
+            --status-blocked: #9B59B6;
+
+            /* Reference and Research colors */
+            --reference-blue: #5DADE2;
+            --research-yellow: #F4D03F;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.5;
+            font-weight: 300;
+            font-size: 14px;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Top Bar - Fixed */
+        .top-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 24px;
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border-subtle);
+            height: 60px;
+        }
+
+        .logo {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 24px;
+            font-weight: 500;
+            color: var(--gold-primary);
+            letter-spacing: 4px;
+        }
+
+        .top-bar-center {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .canvas-btn {
+            background: var(--bg-primary);
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            padding: 8px 14px;
+            color: var(--text-secondary);
+            font-family: 'Outfit', sans-serif;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .canvas-btn:hover {
+            border-color: var(--gold-primary);
+            color: var(--text-primary);
+        }
+
+        .canvas-btn svg {
+            width: 16px;
+            height: 16px;
+            stroke: currentColor;
+            stroke-width: 2;
+            fill: none;
+        }
+
+        .top-bar-right {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .search-input {
+            background: var(--bg-primary);
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            padding: 8px 14px;
+            color: var(--text-primary);
+            font-family: 'Outfit', sans-serif;
+            font-size: 13px;
+            width: 240px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .search-input:focus {
+            border-color: var(--gold-primary);
+        }
+
+        .search-input::placeholder {
+            color: var(--text-muted);
+        }
+
+        .add-btn {
+            background: var(--gold-primary);
+            border: none;
+            border-radius: 6px;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .add-btn:hover {
+            background: var(--gold-light);
+        }
+
+        .add-btn svg {
+            width: 18px;
+            height: 18px;
+            stroke: var(--bg-primary);
+            stroke-width: 2;
+        }
+
+        /* Canvas Viewport */
+        .canvas-viewport {
+            position: absolute;
+            top: 60px;
+            left: 0;
+            right: 0;
+            bottom: 40px;
+            overflow: hidden;
+            cursor: grab;
+            background:
+                radial-gradient(circle at 1px 1px, var(--border-subtle) 1px, transparent 1px);
+            background-size: 40px 40px;
+            background-position: 0 0;
+        }
+
+        .canvas-viewport:active {
+            cursor: grabbing;
+        }
+
+        .canvas-viewport.dragging-module {
+            cursor: default;
+        }
+
+        /* Canvas */
+        .canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            transform-origin: 0 0;
+            will-change: transform;
+        }
+
+        /* Module Card */
+        .module-card {
+            position: absolute;
+            width: 340px;
+            min-height: 200px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-left: 3px solid var(--gold-primary);
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            overflow: visible;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            transition: box-shadow 0.2s;
+        }
+
+        .module-card:hover {
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+        }
+
+        .module-card.dragging {
+            box-shadow: 0 12px 48px rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+        }
+
+        /* Module Header */
+        .module-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 14px;
+            border-bottom: 1px solid var(--border-subtle);
+            background: var(--bg-secondary);
+            border-radius: 7px 7px 0 0;
+            cursor: grab;
+            user-select: none;
+        }
+
+        .module-header:active {
+            cursor: grabbing;
+        }
+
+        .module-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .stage-number {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 20px;
+            font-weight: 500;
+            color: var(--gold-primary);
+        }
+
+        .stage-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .stage-name {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 16px;
+            font-weight: 500;
+            color: var(--text-primary);
+            letter-spacing: 0.5px;
+            line-height: 1.2;
+        }
+
+        .stage-subtitle {
+            font-family: 'Outfit', sans-serif;
+            font-size: 10px;
+            font-weight: 400;
+            color: var(--text-muted);
+            letter-spacing: 0.3px;
+            margin-top: 1px;
+        }
+
+        .progress-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .progress-bar {
+            width: 60px;
+            height: 5px;
+            background: var(--border-subtle);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--gold-primary);
+            border-radius: 3px;
+            transition: width 0.3s ease;
+        }
+
+        .progress-text {
+            font-size: 11px;
+            color: var(--text-secondary);
+            font-weight: 400;
+        }
+
+        /* Module Body */
+        .module-body {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .module-body::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .module-body::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .module-body::-webkit-scrollbar-thumb {
+            background: var(--border-subtle);
+            border-radius: 2px;
+        }
+
+        /* Section */
+        .section {
+            padding: 8px 14px;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .section:last-child {
+            border-bottom: none;
+        }
+
+        .section-header {
+            font-size: 9px;
+            font-weight: 600;
+            color: var(--text-muted);
+            letter-spacing: 1.2px;
+            text-transform: uppercase;
+            margin-bottom: 6px;
+        }
+
+        /* Todo Item */
+        .todo-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 4px 0;
+            cursor: pointer;
+        }
+
+        .priority-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .priority-dot.high { background: var(--priority-high); }
+        .priority-dot.medium { background: var(--priority-medium); }
+        .priority-dot.low { background: var(--priority-low); }
+
+        .todo-checkbox {
+            width: 14px;
+            height: 14px;
+            border: 1.5px solid var(--border-subtle);
+            border-radius: 3px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            transition: all 0.2s;
+        }
+
+        .todo-checkbox:hover {
+            border-color: var(--gold-primary);
+        }
+
+        .todo-checkbox.checked {
+            background: var(--gold-primary);
+            border-color: var(--gold-primary);
+        }
+
+        .todo-checkbox.checked::after {
+            content: '';
+            width: 5px;
+            height: 8px;
+            border: solid var(--bg-primary);
+            border-width: 0 2px 2px 0;
+            transform: rotate(45deg) translateY(-1px);
+        }
+
+        .todo-text {
+            flex: 1;
+            font-size: 12px;
+            color: var(--text-primary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .todo-item.completed .todo-text {
+            text-decoration: line-through;
+            color: var(--text-muted);
+        }
+
+        .todo-due {
+            font-size: 10px;
+            color: var(--text-muted);
+            flex-shrink: 0;
+        }
+
+        /* Reference Item */
+        .reference-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 4px 0;
+            cursor: pointer;
+        }
+
+        .reference-icon {
+            font-size: 11px;
+            flex-shrink: 0;
+            color: var(--reference-blue);
+        }
+
+        .reference-text {
+            flex: 1;
+            font-size: 12px;
+            color: var(--text-secondary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .reference-time {
+            font-size: 10px;
+            color: var(--text-muted);
+            flex-shrink: 0;
+        }
+
+        /* Research Item */
+        .research-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 4px 0;
+            cursor: pointer;
+        }
+
+        .research-icon {
+            font-size: 11px;
+            flex-shrink: 0;
+            color: var(--research-yellow);
+        }
+
+        .research-text {
+            flex: 1;
+            font-size: 12px;
+            color: var(--text-secondary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .research-time {
+            font-size: 10px;
+            color: var(--text-muted);
+            flex-shrink: 0;
+        }
+
+        /* Important Item */
+        .important-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 4px 0;
+            cursor: pointer;
+        }
+
+        .star-icon {
+            color: var(--gold-primary);
+            font-size: 12px;
+            flex-shrink: 0;
+        }
+
+        .important-text {
+            flex: 1;
+            font-size: 12px;
+            color: var(--text-primary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* Status Badges */
+        .status-badge {
+            font-size: 8px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            padding: 2px 6px;
+            border-radius: 3px;
+            text-transform: uppercase;
+            flex-shrink: 0;
+        }
+
+        .status-badge.urgent {
+            background: var(--status-urgent);
+            color: white;
+        }
+
+        .status-badge.progress {
+            background: var(--status-progress);
+            color: white;
+        }
+
+        .status-badge.blocked {
+            background: var(--status-blocked);
+            color: white;
+        }
+
+        /* Overflow Indicator */
+        .overflow-indicator {
+            font-size: 10px;
+            color: var(--text-muted);
+            text-align: right;
+            padding-top: 2px;
+        }
+
+        /* Resize Handles */
+        .resize-handle {
+            position: absolute;
+            background: var(--gold-primary);
+            opacity: 0;
+            transition: opacity 0.2s;
+            z-index: 10;
+        }
+
+        .module-card:hover .resize-handle {
+            opacity: 1;
+        }
+
+        .resize-handle.corner {
+            width: 10px;
+            height: 10px;
+            border-radius: 2px;
+        }
+
+        .resize-handle.bottom-right {
+            bottom: -5px;
+            right: -5px;
+            cursor: nwse-resize;
+        }
+
+        .resize-handle.bottom-left {
+            bottom: -5px;
+            left: -5px;
+            cursor: nesw-resize;
+        }
+
+        .resize-handle.top-right {
+            top: -5px;
+            right: -5px;
+            cursor: nesw-resize;
+        }
+
+        .resize-handle.top-left {
+            top: -5px;
+            left: -5px;
+            cursor: nwse-resize;
+        }
+
+        .resize-handle.edge {
+            background: var(--gold-primary);
+        }
+
+        .resize-handle.right {
+            top: 20px;
+            bottom: 20px;
+            right: -3px;
+            width: 6px;
+            cursor: ew-resize;
+        }
+
+        .resize-handle.left {
+            top: 20px;
+            bottom: 20px;
+            left: -3px;
+            width: 6px;
+            cursor: ew-resize;
+        }
+
+        .resize-handle.bottom {
+            left: 20px;
+            right: 20px;
+            bottom: -3px;
+            height: 6px;
+            cursor: ns-resize;
+        }
+
+        .resize-handle.top {
+            left: 20px;
+            right: 20px;
+            top: -3px;
+            height: 6px;
+            cursor: ns-resize;
+        }
+
+        /* Canvas Info Bar - Fixed */
+        .canvas-info {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 24px;
+            background: var(--bg-secondary);
+            border-top: 1px solid var(--border-subtle);
+            height: 40px;
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .canvas-info-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .zoom-controls {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .zoom-btn {
+            background: var(--bg-primary);
+            border: 1px solid var(--border-subtle);
+            border-radius: 4px;
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: var(--text-secondary);
+            font-size: 16px;
+            transition: all 0.2s;
+        }
+
+        .zoom-btn:hover {
+            border-color: var(--gold-primary);
+            color: var(--text-primary);
+        }
+
+        .zoom-display {
+            min-width: 50px;
+            text-align: center;
+            color: var(--text-secondary);
+        }
+
+        .position-display {
+            color: var(--text-muted);
+        }
+
+        .canvas-info-right {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 11px;
+        }
+
+        .shortcut-hint {
+            color: var(--text-muted);
+        }
+
+        .shortcut-hint kbd {
+            background: var(--bg-primary);
+            border: 1px solid var(--border-subtle);
+            border-radius: 3px;
+            padding: 1px 5px;
+            font-family: monospace;
+            font-size: 10px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Top Bar -->
+    <header class="top-bar">
+        <div class="logo">CHAKRA</div>
+        <div class="top-bar-center">
+            <button class="canvas-btn" id="fitAllBtn" title="Fit all modules in view">
+                <svg viewBox="0 0 24 24">
+                    <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/>
+                </svg>
+                Fit
+            </button>
+            <button class="canvas-btn" id="resetViewBtn" title="Reset to default view">
+                <svg viewBox="0 0 24 24">
+                    <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+                    <path d="M3 3v5h5"/>
+                </svg>
+                Reset
+            </button>
+        </div>
+        <div class="top-bar-right">
+            <input type="text" class="search-input" placeholder="Search across all stages...">
+            <button class="add-btn" title="Add new module">
+                <svg viewBox="0 0 24 24" fill="none">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+            </button>
+        </div>
+    </header>
+
+    <!-- Canvas Viewport -->
+    <div class="canvas-viewport" id="canvasViewport">
+        <div class="canvas" id="canvas">
+            <!-- Module 01: SparkForge -->
+            <div class="module-card" data-module="sparkforge" style="left: 80px; top: 60px; width: 340px;">
+                <div class="module-header">
+                    <div class="module-title">
+                        <span class="stage-number">01</span>
+                        <div class="stage-info">
+                            <span class="stage-name">SparkForge</span>
+                            <span class="stage-subtitle">Ideation & Research</span>
+                        </div>
+                    </div>
+                    <div class="progress-container">
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: 66%"></div>
+                        </div>
+                        <span class="progress-text">4/6</span>
+                    </div>
+                </div>
+                <div class="module-body">
+                    <div class="section">
+                        <div class="section-header">Priority Tasks</div>
+                        <div class="section-content">
+                            <div class="todo-item">
+                                <span class="priority-dot high"></span>
+                                <div class="todo-checkbox" onclick="toggleTodo(this)"></div>
+                                <span class="todo-text">Finalize API pricing strategy</span>
+                                <span class="todo-due">Due: Feb 16</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="section">
+                        <div class="section-header">Todos</div>
+                        <div class="section-content">
+                            <div class="todo-item">
+                                <span class="priority-dot medium"></span>
+                                <div class="todo-checkbox" onclick="toggleTodo(this)"></div>
+                                <span class="todo-text">Interview 5 more YouTubers</span>
+                                <span class="todo-due">Due: Feb 19</span>
+                            </div>
+                            <div class="todo-item">
+                                <span class="priority-dot low"></span>
+                                <div class="todo-checkbox" onclick="toggleTodo(this)"></div>
+                                <span class="todo-text">Document API costs per video</span>
+                                <span class="todo-due">Due: Feb 22</span>
+                            </div>
+                            <div class="overflow-indicator">+2 more</div>
+                        </div>
+                    </div>
+                    <div class="section">
+                        <div class="section-header">Last Reference</div>
+                        <div class="section-content">
+                            <div class="reference-item">
+                                <span class="reference-icon">🔗</span>
+                                <span class="reference-text">Runway ML Pricing Page</span>
+                                <span class="reference-time">opened 2h</span>
+                            </div>
+                            <div class="reference-item">
+                                <span class="reference-icon">🔗</span>
+                                <span class="reference-text">Pika Labs Documentation</span>
+                                <span class="reference-time">opened 1d</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="section">
+                        <div class="section-header">Last Research</div>
+                        <div class="section-content">
+                            <div class="research-item">
+                                <span class="research-icon">📝</span>
+                                <span class="research-text">AI Video Market Analysis ($1.2B TAM)</span>
+                                <span class="research-time">3h ago</span>
+                            </div>
+                            <div class="research-item">
+                                <span class="research-icon">📝</span>
+                                <span class="research-text">ICP Validation: Solo creators</span>
+                                <span class="research-time">1d ago</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="section">
+                        <div class="section-header">Important</div>
+                        <div class="section-content">
+                            <div class="important-item">
+                                <span class="star-icon">★</span>
+                                <span class="important-text">Key insight: 73% want text-to-video</span>
+                                <span class="status-badge progress">In Prog</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="resize-handle corner bottom-right"></div>
+                <div class="resize-handle corner bottom-left"></div>
+                <div class="resize-handle edge right"></div>
+                <div class="resize-handle edge bottom"></div>
+            </div>
+
+            <!-- Module 03: LightningBuilder -->
+            <div class="module-card" data-module="lightningbuilder" style="left: 460px; top: 40px; width: 340px;">
+                <div class="module-header">
+                    <div class="module-title">
+                        <span class="stage-number">03</span>
+                        <div class="stage-info">
+                            <span class="stage-name">LightningBuilder</span>
+                            <span class="stage-subtitle">Build & Code</span>
+                        </div>
+                    </div>
+                    <div class="progress-container">
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: 37%"></div>
+                        </div>
+                        <span class="progress-text">3/8</span>
+                    </div>
+                </div>
+                <div class="module-body">
+                    <div class="section">
+                        <div class="section-header">Priority Tasks</div>
+                        <div class="section-content">
+                            <div class="todo-item">
+                                <span class="priority-dot high"></span>
+                                <div class="todo-checkbox" onclick="toggleTodo(this)"></div>
+                                <span class="todo-text">Integrate Replicate API for video gen</span>
+                                <span class="todo-due">Due: Feb 17</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="section">
+                        <div class="section-header">Todos</div>
+                        <div class="section-content">
+                            <div class="todo-item">
+                                <span class="priority-dot high"></span>
+                                <div class="todo-checkbox" onclick="toggleTodo(this)"></div>
+                                <span class="todo-text">Build video preview component</span>
+                                <span class="todo-due">Due: Feb 18</span>
+                            </div>
+                            <div class="todo-item">
+                                <span class="priority-dot medium"></span>
+                                <div class="todo-checkbox" onclick="toggleTodo(this)"></div>
+                                <span class="todo-text">Add Stripe subscription billing</span>
+                                <span class="todo-due">Due: Feb 21</span>
+                            </div>
+                            <div class="overflow-indicator">+5 more</div>
+                        </div>
+                    </div>
+                    <div class="section">
+                        <div class="section-header">Last Reference</div>
+                        <div class="section-content">
+                            <div class="reference-item">
+                                <span class="reference-icon">🔗</span>
+                                <span class="reference-text">Replicate API Docs</span>
+                                <span class="reference-time">opened 1h</span>
+                            </div>
+                            <div class="reference-item">
+                                <span class="reference-icon">🔗</span>
+                                <span class="reference-text">Stripe Integration Guide</span>
+                                <span class="reference-time">opened 4h</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="section">
+                        <div class="section-header">Last Research</div>
+                        <div class="section-content">
+                            <div class="research-item">
+                                <span class="research-icon">📝</span>
+                                <span class="research-text">Deployed Next.js app to Vercel</span>
+                                <span class="research-time">2h ago</span>
+                            </div>
+                            <div class="research-item">
+                                <span class="research-icon">📝</span>
+                                <span class="research-text">Set up Supabase auth + database</span>
+                                <span class="research-time">6h ago</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="section">
+                        <div class="section-header">Important</div>
+                        <div class="section-content">
+                            <div class="important-item">
+                                <span class="star-icon">★</span>
+                                <span class="important-text">GPU costs exceeding budget ($0.12/min)</span>
+                                <span class="status-badge blocked">Blocked</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="resize-handle corner bottom-right"></div>
+                <div class="resize-handle corner bottom-left"></div>
+                <div class="resize-handle edge right"></div>
+                <div class="resize-handle edge bottom"></div>
+            </div>
+
+            <!-- Module 05: LaunchPad Pro -->
+            <div class="module-card" data-module="launchpadpro" style="left: 180px; top: 520px; width: 340px;">
+                <div class="module-header">
+                    <div class="module-title">
+                        <span class="stage-number">05</span>
+                        <div class="stage-info">
+                            <span class="stage-name">LaunchPad Pro</span>
+                            <span class="stage-subtitle">Landing Pages & Launch</span>
+                        </div>
+                    </div>
+                    <div class="progress-container">
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: 40%"></div>
+                        </div>
+                        <span class="progress-text">2/5</span>
+                    </div>
+                </div>
+                <div class="module-body">
+                    <div class="section">
+                        <div class="section-header">Priority Tasks</div>
+                        <div class="section-content">
+                            <div class="todo-item">
+                                <span class="priority-dot high"></span>
+                                <div class="todo-checkbox" onclick="toggleTodo(this)"></div>
+                                <span class="todo-text">Record demo video (60s product tour)</span>
+                                <span class="todo-due">Due: Feb 18</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="section">
+                        <div class="section-header">Todos</div>
+                        <div class="section-content">
+                            <div class="todo-item">
+                                <span class="priority-dot medium"></span>
+                                <div class="todo-checkbox" onclick="toggleTodo(this)"></div>
+                                <span class="todo-text">Set up Product Hunt launch page</span>
+                                <span class="todo-due">Due: Feb 24</span>
+                            </div>
+                            <div class="todo-item">
+                                <span class="priority-dot low"></span>
+                                <div class="todo-checkbox" onclick="toggleTodo(this)"></div>
+                                <span class="todo-text">Prepare launch day Twitter thread</span>
+                                <span class="todo-due">Due: Feb 28</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="section">
+                        <div class="section-header">Last Reference</div>
+                        <div class="section-content">
+                            <div class="reference-item">
+                                <span class="reference-icon">🔗</span>
+                                <span class="reference-text">Product Hunt Best Practices</span>
+                                <span class="reference-time">opened 3h</span>
+                            </div>
+                            <div class="reference-item">
+                                <span class="reference-icon">🔗</span>
+                                <span class="reference-text">Loom Recording Tips</span>
+                                <span class="reference-time">opened 1d</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="section">
+                        <div class="section-header">Last Research</div>
+                        <div class="section-content">
+                            <div class="research-item">
+                                <span class="research-icon">📝</span>
+                                <span class="research-text">Landing page live at vidforge.ai</span>
+                                <span class="research-time">1d ago</span>
+                            </div>
+                            <div class="research-item">
+                                <span class="research-icon">📝</span>
+                                <span class="research-text">Waitlist signups: 847</span>
+                                <span class="research-time">3d ago</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="section">
+                        <div class="section-header">Important</div>
+                        <div class="section-content">
+                            <div class="important-item">
+                                <span class="star-icon">★</span>
+                                <span class="important-text">PH Launch: March 5th (Tuesday)</span>
+                                <span class="status-badge urgent">Urgent</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="resize-handle corner bottom-right"></div>
+                <div class="resize-handle corner bottom-left"></div>
+                <div class="resize-handle edge right"></div>
+                <div class="resize-handle edge bottom"></div>
+            </div>
+
+            <!-- Module 06: RankRocket -->
+            <div class="module-card" data-module="rankrocket" style="left: 560px; top: 480px; width: 340px;">
+                <div class="module-header">
+                    <div class="module-title">
+                        <span class="stage-number">06</span>
+                        <div class="stage-info">
+                            <span class="stage-name">RankRocket</span>
+                            <span class="stage-subtitle">SEO & Content</span>
+                        </div>
+                    </div>
+                    <div class="progress-container">
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: 28%"></div>
+                        </div>
+                        <span class="progress-text">2/7</span>
+                    </div>
+                </div>
+                <div class="module-body">
+                    <div class="section">
+                        <div class="section-header">Priority Tasks</div>
+                        <div class="section-content">
+                            <div class="todo-item">
+                                <span class="priority-dot high"></span>
+                                <div class="todo-checkbox" onclick="toggleTodo(this)"></div>
+                                <span class="todo-text">Write "AI video generator" comparison</span>
+                                <span class="todo-due">Due: Feb 20</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="section">
+                        <div class="section-header">Todos</div>
+                        <div class="section-content">
+                            <div class="todo-item">
+                                <span class="priority-dot medium"></span>
+                                <div class="todo-checkbox" onclick="toggleTodo(this)"></div>
+                                <span class="todo-text">Create 10 YouTube Shorts tutorials</span>
+                                <span class="todo-due">Due: Mar 1</span>
+                            </div>
+                            <div class="todo-item">
+                                <span class="priority-dot low"></span>
+                                <div class="todo-checkbox" onclick="toggleTodo(this)"></div>
+                                <span class="todo-text">Guest post on VideoCreator blog</span>
+                                <span class="todo-due">Due: Mar 5</span>
+                            </div>
+                            <div class="overflow-indicator">+4 more</div>
+                        </div>
+                    </div>
+                    <div class="section">
+                        <div class="section-header">Last Reference</div>
+                        <div class="section-content">
+                            <div class="reference-item">
+                                <span class="reference-icon">🔗</span>
+                                <span class="reference-text">Ahrefs Keyword Explorer</span>
+                                <span class="reference-time">opened 30m</span>
+                            </div>
+                            <div class="reference-item">
+                                <span class="reference-icon">🔗</span>
+                                <span class="reference-text">Competitor Analysis Sheet</span>
+                                <span class="reference-time">opened 2h</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="section">
+                        <div class="section-header">Last Research</div>
+                        <div class="section-content">
+                            <div class="research-item">
+                                <span class="research-icon">📝</span>
+                                <span class="research-text">Published "Text to Video" guide</span>
+                                <span class="research-time">4h ago</span>
+                            </div>
+                            <div class="research-item">
+                                <span class="research-icon">📝</span>
+                                <span class="research-text">Outreach to 15 AI newsletters</span>
+                                <span class="research-time">2d ago</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="section">
+                        <div class="section-header">Important</div>
+                        <div class="section-content">
+                            <div class="important-item">
+                                <span class="star-icon">★</span>
+                                <span class="important-text">Target: Rank for "ai video generator"</span>
+                                <span class="status-badge progress">In Prog</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="resize-handle corner bottom-right"></div>
+                <div class="resize-handle corner bottom-left"></div>
+                <div class="resize-handle edge right"></div>
+                <div class="resize-handle edge bottom"></div>
+            </div>
+
+            <!-- Module 08: ScaleMaster -->
+            <div class="module-card" data-module="scalemaster" style="left: 840px; top: 120px; width: 380px;">
+                <div class="module-header">
+                    <div class="module-title">
+                        <span class="stage-number">08</span>
+                        <div class="stage-info">
+                            <span class="stage-name">ScaleMaster</span>
+                            <span class="stage-subtitle">Analytics & Scale</span>
+                        </div>
+                    </div>
+                    <div class="progress-container">
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: 16%"></div>
+                        </div>
+                        <span class="progress-text">1/6</span>
+                    </div>
+                </div>
+                <div class="module-body">
+                    <div class="section">
+                        <div class="section-header">Priority Tasks</div>
+                        <div class="section-content">
+                            <div class="todo-item">
+                                <span class="priority-dot high"></span>
+                                <div class="todo-checkbox" onclick="toggleTodo(this)"></div>
+                                <span class="todo-text">Set up PostHog product analytics</span>
+                                <span class="todo-due">Due: Feb 20</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="section">
+                        <div class="section-header">Todos</div>
+                        <div class="section-content">
+                            <div class="todo-item">
+                                <span class="priority-dot medium"></span>
+                                <div class="todo-checkbox" onclick="toggleTodo(this)"></div>
+                                <span class="todo-text">Define activation metric (first video)</span>
+                                <span class="todo-due">Due: Feb 23</span>
+                            </div>
+                            <div class="todo-item">
+                                <span class="priority-dot low"></span>
+                                <div class="todo-checkbox" onclick="toggleTodo(this)"></div>
+                                <span class="todo-text">Build revenue dashboard in Notion</span>
+                                <span class="todo-due">Due: Mar 1</span>
+                            </div>
+                            <div class="overflow-indicator">+3 more</div>
+                        </div>
+                    </div>
+                    <div class="section">
+                        <div class="section-header">Last Reference</div>
+                        <div class="section-content">
+                            <div class="reference-item">
+                                <span class="reference-icon">🔗</span>
+                                <span class="reference-text">PostHog Setup Guide</span>
+                                <span class="reference-time">opened 1h</span>
+                            </div>
+                            <div class="reference-item">
+                                <span class="reference-icon">🔗</span>
+                                <span class="reference-text">Stripe Dashboard API</span>
+                                <span class="reference-time">opened 3h</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="section">
+                        <div class="section-header">Last Research</div>
+                        <div class="section-content">
+                            <div class="research-item">
+                                <span class="research-icon">📝</span>
+                                <span class="research-text">Integrated Stripe revenue tracking</span>
+                                <span class="research-time">1d ago</span>
+                            </div>
+                            <div class="research-item">
+                                <span class="research-icon">📝</span>
+                                <span class="research-text">Planning beta user cohort analysis</span>
+                                <span class="research-time">2d ago</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="section">
+                        <div class="section-header">Important</div>
+                        <div class="section-content">
+                            <div class="important-item">
+                                <span class="star-icon">★</span>
+                                <span class="important-text">Target: 100 paying users by April</span>
+                                <span class="status-badge urgent">Urgent</span>
+                            </div>
+                            <div class="important-item">
+                                <span class="star-icon">★</span>
+                                <span class="important-text">Track: Waitlist → Trial → Paid funnel</span>
+                                <span class="status-badge progress">In Prog</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="resize-handle corner bottom-right"></div>
+                <div class="resize-handle corner bottom-left"></div>
+                <div class="resize-handle edge right"></div>
+                <div class="resize-handle edge bottom"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Canvas Info Bar -->
+    <div class="canvas-info">
+        <div class="canvas-info-left">
+            <div class="zoom-controls">
+                <button class="zoom-btn" id="zoomOutBtn" title="Zoom out">−</button>
+                <span class="zoom-display" id="zoomDisplay">100%</span>
+                <button class="zoom-btn" id="zoomInBtn" title="Zoom in">+</button>
+            </div>
+            <span class="position-display" id="positionDisplay">X: 0  Y: 0</span>
+        </div>
+        <div class="canvas-info-right">
+            <span class="shortcut-hint"><kbd>Scroll</kbd> Zoom</span>
+            <span class="shortcut-hint"><kbd>Drag</kbd> Pan</span>
+            <span class="shortcut-hint"><kbd>+</kbd><kbd>−</kbd> Zoom</span>
+            <span class="shortcut-hint"><kbd>0</kbd> Reset</span>
+        </div>
+    </div>
+
+    <script>
+        // Canvas State
+        const canvasState = {
+            x: 0,
+            y: 0,
+            zoom: 1,
+            minZoom: 0.25,
+            maxZoom: 2,
+            isPanning: false,
+            isDraggingModule: false,
+            isResizing: false,
+            startX: 0,
+            startY: 0,
+            startPanX: 0,
+            startPanY: 0,
+            activeModule: null,
+            moduleStartX: 0,
+            moduleStartY: 0,
+            resizeHandle: null,
+            moduleStartWidth: 0,
+            moduleStartHeight: 0,
+            moduleStartLeft: 0,
+            moduleStartTop: 0
+        };
+
+        // DOM Elements
+        const viewport = document.getElementById('canvasViewport');
+        const canvas = document.getElementById('canvas');
+        const zoomDisplay = document.getElementById('zoomDisplay');
+        const positionDisplay = document.getElementById('positionDisplay');
+        const fitAllBtn = document.getElementById('fitAllBtn');
+        const resetViewBtn = document.getElementById('resetViewBtn');
+        const zoomInBtn = document.getElementById('zoomInBtn');
+        const zoomOutBtn = document.getElementById('zoomOutBtn');
+
+        // Apply transform to canvas
+        function applyTransform() {
+            canvas.style.transform = `translate(${canvasState.x}px, ${canvasState.y}px) scale(${canvasState.zoom})`;
+            zoomDisplay.textContent = Math.round(canvasState.zoom * 100) + '%';
+            positionDisplay.textContent = `X: ${Math.round(canvasState.x)}  Y: ${Math.round(canvasState.y)}`;
+
+            // Update background pattern position
+            viewport.style.backgroundPosition = `${canvasState.x}px ${canvasState.y}px`;
+            viewport.style.backgroundSize = `${40 * canvasState.zoom}px ${40 * canvasState.zoom}px`;
+        }
+
+        // Convert screen coordinates to canvas coordinates
+        function screenToCanvas(screenX, screenY) {
+            const rect = viewport.getBoundingClientRect();
+            return {
+                x: (screenX - rect.left - canvasState.x) / canvasState.zoom,
+                y: (screenY - rect.top - canvasState.y) / canvasState.zoom
+            };
+        }
+
+        // Zoom to a specific point
+        function zoomToPoint(clientX, clientY, delta) {
+            const rect = viewport.getBoundingClientRect();
+            const mouseX = clientX - rect.left;
+            const mouseY = clientY - rect.top;
+
+            // Calculate the point on the canvas under the mouse
+            const canvasX = (mouseX - canvasState.x) / canvasState.zoom;
+            const canvasY = (mouseY - canvasState.y) / canvasState.zoom;
+
+            // Apply zoom
+            const zoomFactor = delta > 0 ? 0.9 : 1.1;
+            const newZoom = Math.max(canvasState.minZoom, Math.min(canvasState.maxZoom, canvasState.zoom * zoomFactor));
+
+            // Adjust pan to keep the point under the mouse
+            canvasState.x = mouseX - canvasX * newZoom;
+            canvasState.y = mouseY - canvasY * newZoom;
+            canvasState.zoom = newZoom;
+
+            applyTransform();
+            saveCanvasState();
+        }
+
+        // Fit all modules in view
+        function fitAllModules() {
+            const modules = document.querySelectorAll('.module-card');
+            if (modules.length === 0) return;
+
+            let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+
+            modules.forEach(module => {
+                const left = parseFloat(module.style.left) || 0;
+                const top = parseFloat(module.style.top) || 0;
+                const width = module.offsetWidth;
+                const height = module.offsetHeight;
+
+                minX = Math.min(minX, left);
+                minY = Math.min(minY, top);
+                maxX = Math.max(maxX, left + width);
+                maxY = Math.max(maxY, top + height);
+            });
+
+            const contentWidth = maxX - minX;
+            const contentHeight = maxY - minY;
+            const viewportRect = viewport.getBoundingClientRect();
+            const padding = 60;
+
+            const scaleX = (viewportRect.width - padding * 2) / contentWidth;
+            const scaleY = (viewportRect.height - padding * 2) / contentHeight;
+            const scale = Math.min(scaleX, scaleY, 1);
+
+            canvasState.zoom = Math.max(canvasState.minZoom, Math.min(canvasState.maxZoom, scale));
+            canvasState.x = (viewportRect.width - contentWidth * canvasState.zoom) / 2 - minX * canvasState.zoom;
+            canvasState.y = (viewportRect.height - contentHeight * canvasState.zoom) / 2 - minY * canvasState.zoom;
+
+            applyTransform();
+            saveCanvasState();
+        }
+
+        // Reset view to default
+        function resetView() {
+            canvasState.x = 0;
+            canvasState.y = 0;
+            canvasState.zoom = 1;
+            applyTransform();
+            saveCanvasState();
+        }
+
+        // Save canvas state to localStorage
+        function saveCanvasState() {
+            const state = {
+                x: canvasState.x,
+                y: canvasState.y,
+                zoom: canvasState.zoom
+            };
+            localStorage.setItem('chakraCanvasState', JSON.stringify(state));
+        }
+
+        // Load canvas state from localStorage
+        function loadCanvasState() {
+            const saved = localStorage.getItem('chakraCanvasState');
+            if (saved) {
+                const state = JSON.parse(saved);
+                canvasState.x = state.x || 0;
+                canvasState.y = state.y || 0;
+                canvasState.zoom = state.zoom || 1;
+            }
+            applyTransform();
+        }
+
+        // Save module positions to localStorage
+        function saveModulePositions() {
+            const modules = document.querySelectorAll('.module-card');
+            const positions = {};
+            modules.forEach(module => {
+                const id = module.dataset.module;
+                positions[id] = {
+                    left: module.style.left,
+                    top: module.style.top,
+                    width: module.style.width
+                };
+            });
+            localStorage.setItem('chakraModulePositions', JSON.stringify(positions));
+        }
+
+        // Load module positions from localStorage
+        function loadModulePositions() {
+            const saved = localStorage.getItem('chakraModulePositions');
+            if (saved) {
+                const positions = JSON.parse(saved);
+                const modules = document.querySelectorAll('.module-card');
+                modules.forEach(module => {
+                    const id = module.dataset.module;
+                    if (positions[id]) {
+                        module.style.left = positions[id].left;
+                        module.style.top = positions[id].top;
+                        if (positions[id].width) {
+                            module.style.width = positions[id].width;
+                        }
+                    }
+                });
+            }
+        }
+
+        // Event Listeners
+
+        // Wheel zoom
+        viewport.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            zoomToPoint(e.clientX, e.clientY, e.deltaY);
+        }, { passive: false });
+
+        // Pan start
+        viewport.addEventListener('mousedown', (e) => {
+            // Check if clicking on a module header (for dragging module)
+            const header = e.target.closest('.module-header');
+            const resizeHandle = e.target.closest('.resize-handle');
+
+            if (resizeHandle) {
+                // Start resizing
+                e.preventDefault();
+                canvasState.isResizing = true;
+                canvasState.resizeHandle = resizeHandle;
+                canvasState.activeModule = resizeHandle.closest('.module-card');
+                canvasState.startX = e.clientX;
+                canvasState.startY = e.clientY;
+                canvasState.moduleStartWidth = canvasState.activeModule.offsetWidth;
+                canvasState.moduleStartHeight = canvasState.activeModule.offsetHeight;
+                canvasState.moduleStartLeft = parseFloat(canvasState.activeModule.style.left) || 0;
+                canvasState.moduleStartTop = parseFloat(canvasState.activeModule.style.top) || 0;
+                canvasState.activeModule.classList.add('dragging');
+                viewport.classList.add('dragging-module');
+            } else if (header) {
+                // Start dragging module
+                e.preventDefault();
+                canvasState.isDraggingModule = true;
+                canvasState.activeModule = header.closest('.module-card');
+                canvasState.startX = e.clientX;
+                canvasState.startY = e.clientY;
+                canvasState.moduleStartX = parseFloat(canvasState.activeModule.style.left) || 0;
+                canvasState.moduleStartY = parseFloat(canvasState.activeModule.style.top) || 0;
+                canvasState.activeModule.classList.add('dragging');
+                viewport.classList.add('dragging-module');
+            } else if (e.target === viewport || e.target === canvas) {
+                // Start panning
+                canvasState.isPanning = true;
+                canvasState.startX = e.clientX;
+                canvasState.startY = e.clientY;
+                canvasState.startPanX = canvasState.x;
+                canvasState.startPanY = canvasState.y;
+            }
+        });
+
+        // Mouse move (pan, drag, or resize)
+        window.addEventListener('mousemove', (e) => {
+            if (canvasState.isPanning) {
+                const dx = e.clientX - canvasState.startX;
+                const dy = e.clientY - canvasState.startY;
+                canvasState.x = canvasState.startPanX + dx;
+                canvasState.y = canvasState.startPanY + dy;
+                applyTransform();
+            } else if (canvasState.isDraggingModule && canvasState.activeModule) {
+                const dx = (e.clientX - canvasState.startX) / canvasState.zoom;
+                const dy = (e.clientY - canvasState.startY) / canvasState.zoom;
+                canvasState.activeModule.style.left = (canvasState.moduleStartX + dx) + 'px';
+                canvasState.activeModule.style.top = (canvasState.moduleStartY + dy) + 'px';
+            } else if (canvasState.isResizing && canvasState.activeModule) {
+                const dx = (e.clientX - canvasState.startX) / canvasState.zoom;
+                const dy = (e.clientY - canvasState.startY) / canvasState.zoom;
+                const handle = canvasState.resizeHandle;
+                const minWidth = 280;
+                const minHeight = 200;
+
+                if (handle.classList.contains('right') || handle.classList.contains('bottom-right')) {
+                    const newWidth = Math.max(minWidth, canvasState.moduleStartWidth + dx);
+                    canvasState.activeModule.style.width = newWidth + 'px';
+                }
+                if (handle.classList.contains('bottom') || handle.classList.contains('bottom-right') || handle.classList.contains('bottom-left')) {
+                    const newHeight = Math.max(minHeight, canvasState.moduleStartHeight + dy);
+                    canvasState.activeModule.style.height = newHeight + 'px';
+                }
+                if (handle.classList.contains('left') || handle.classList.contains('bottom-left')) {
+                    const newWidth = Math.max(minWidth, canvasState.moduleStartWidth - dx);
+                    if (newWidth > minWidth || dx < 0) {
+                        canvasState.activeModule.style.width = newWidth + 'px';
+                        canvasState.activeModule.style.left = (canvasState.moduleStartLeft + canvasState.moduleStartWidth - newWidth) + 'px';
+                    }
+                }
+            }
+        });
+
+        // Mouse up (end pan, drag, or resize)
+        window.addEventListener('mouseup', () => {
+            if (canvasState.isPanning) {
+                canvasState.isPanning = false;
+                saveCanvasState();
+            }
+            if (canvasState.isDraggingModule || canvasState.isResizing) {
+                if (canvasState.activeModule) {
+                    canvasState.activeModule.classList.remove('dragging');
+                }
+                canvasState.isDraggingModule = false;
+                canvasState.isResizing = false;
+                canvasState.activeModule = null;
+                canvasState.resizeHandle = null;
+                viewport.classList.remove('dragging-module');
+                saveModulePositions();
+            }
+        });
+
+        // Keyboard shortcuts
+        window.addEventListener('keydown', (e) => {
+            // Don't trigger if typing in input
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+            switch(e.key) {
+                case '+':
+                case '=':
+                    e.preventDefault();
+                    const rect = viewport.getBoundingClientRect();
+                    zoomToPoint(rect.left + rect.width / 2, rect.top + rect.height / 2, -100);
+                    break;
+                case '-':
+                case '_':
+                    e.preventDefault();
+                    const rect2 = viewport.getBoundingClientRect();
+                    zoomToPoint(rect2.left + rect2.width / 2, rect2.top + rect2.height / 2, 100);
+                    break;
+                case '0':
+                    e.preventDefault();
+                    resetView();
+                    break;
+                case 'ArrowUp':
+                    e.preventDefault();
+                    canvasState.y += 50;
+                    applyTransform();
+                    saveCanvasState();
+                    break;
+                case 'ArrowDown':
+                    e.preventDefault();
+                    canvasState.y -= 50;
+                    applyTransform();
+                    saveCanvasState();
+                    break;
+                case 'ArrowLeft':
+                    e.preventDefault();
+                    canvasState.x += 50;
+                    applyTransform();
+                    saveCanvasState();
+                    break;
+                case 'ArrowRight':
+                    e.preventDefault();
+                    canvasState.x -= 50;
+                    applyTransform();
+                    saveCanvasState();
+                    break;
+            }
+        });
+
+        // Button clicks
+        fitAllBtn.addEventListener('click', fitAllModules);
+        resetViewBtn.addEventListener('click', resetView);
+        zoomInBtn.addEventListener('click', () => {
+            const rect = viewport.getBoundingClientRect();
+            zoomToPoint(rect.left + rect.width / 2, rect.top + rect.height / 2, -100);
+        });
+        zoomOutBtn.addEventListener('click', () => {
+            const rect = viewport.getBoundingClientRect();
+            zoomToPoint(rect.left + rect.width / 2, rect.top + rect.height / 2, 100);
+        });
+
+        // Toggle todo checkbox
+        function toggleTodo(checkbox) {
+            checkbox.classList.toggle('checked');
+            const todoItem = checkbox.closest('.todo-item');
+            todoItem.classList.toggle('completed');
+            updateModuleProgress(checkbox.closest('.module-card'));
+        }
+
+        // Update module progress bar based on completed todos
+        function updateModuleProgress(moduleCard) {
+            const todos = moduleCard.querySelectorAll('.todo-item');
+            const completedTodos = moduleCard.querySelectorAll('.todo-item.completed');
+            const progressText = moduleCard.querySelector('.progress-text');
+            const currentProgress = progressText.textContent.split('/');
+            const totalWithHidden = parseInt(currentProgress[1]);
+            const progressFill = moduleCard.querySelector('.progress-fill');
+            const percentage = (completedTodos.length / todos.length) * 100;
+            progressFill.style.width = percentage + '%';
+        }
+
+        // Initialize
+        loadModulePositions();
+        loadCanvasState();
+    </script>
+</body>
+</html>
